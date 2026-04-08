@@ -123,3 +123,54 @@
 - Push project memory update to GitHub
 - Optionally clean up Supabase test data
 - Prepare Render deployment or continue product refinement
+
+## 2026-04-08 18:30 EDT
+
+### Feature / Work
+- Tightened the RICE rubric and added a small brand accent for Monkey
+- Updated the scoring workflow so `Reach`, `Impact`, and `Effort` use a governed `0-5` scale while `Confidence` stays on its percentage-style scale
+- Added visible rubric guidance in the score panel and refined the cat logo placement so it supports the header without disrupting the title layout
+
+### Value Provided
+- Made the scoring model more trustworthy and easier for PMs to use consistently
+- Prevented users from selecting invalid `0-5` values in the UI instead of relying only on backend validation
+- Added a bit of product personality tied to Monkey while preserving the app’s visual hierarchy
+
+### Files Changed
+- `client/src/App.jsx`
+- `client/src/styles.css`
+- `server/src/index.js`
+- `server/src/requestStore.js`
+- `server/src/sampleRequests.js`
+
+### Technical Architecture / Key Decisions
+- Introduced explicit front-end scoring constraints for `Reach`, `Impact`, and `Effort` by switching them to controlled `0-5` selection fields
+- Added backend validation for RICE field ranges so create/update requests reject out-of-range values
+- Updated memory-mode sample data to match the new rubric so fallback behavior stays consistent with production behavior
+- Kept `Confidence` on a separate `0-100` percentage-style scale rather than forcing it into the same rubric as the other inputs
+- Moved the cat mark into the brand metadata row so the title keeps its intended width and wrapping
+
+### Assumptions
+- PMs want a simple, lightweight rubric and do not need fractional or raw-count reach values right now
+- The production value of consistency is higher than the flexibility of free-entry RICE fields
+- The cat brand mark should stay subtle and secondary to the product name
+
+### Known Limitations
+- Older Supabase rows with legacy `Reach` values above `5` may fail updates until they are normalized to the new rubric
+- Direct API requests with non-numeric RICE payloads still may not get perfectly classified as validation errors in every edge case
+- The app still does not define a deeper semantic rubric for what each score level means beyond the numeric range itself
+
+### Key Learnings
+- A scoring model only becomes trustworthy once the inputs are governed consistently in both the UI and backend
+- Form-level constraints are usually better than free-entry validation warnings for lightweight workflow tools
+- Decorative brand elements should support hierarchy, not take layout width away from the primary heading
+
+### Remaining TODOs
+- Normalize any legacy Supabase requests that still use pre-rubric `Reach` values
+- Decide whether to add written guidance for what `0`, `1`, `3`, and `5` mean for each RICE category
+- Consider whether `Confidence` should eventually become a dropdown too, or remain a numeric percentage field
+
+### Next Steps
+- Verify production behavior after Render redeploy
+- Decide whether to clean or migrate any legacy rows in Supabase
+- Continue with the next product refinement or workflow feature once the new rubric is stable
