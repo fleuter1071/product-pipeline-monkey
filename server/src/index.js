@@ -39,7 +39,10 @@ app.post("/api/requests", async (req, res) => {
     const item = await requestStore.createRequest(req.body);
     res.status(201).json({ item });
   } catch (error) {
-    const statusCode = error.message?.includes("required") ? 400 : 500;
+    const statusCode =
+      error.message?.includes("required") || error.message?.includes("must stay between")
+        ? 400
+        : 500;
     res.status(statusCode).json({
       error: "Failed to create request.",
       detail: error.message,
@@ -57,7 +60,12 @@ app.patch("/api/requests/:id", async (req, res) => {
 
     return res.json({ item });
   } catch (error) {
-    return res.status(500).json({
+    const statusCode =
+      error.message?.includes("required") || error.message?.includes("must stay between")
+        ? 400
+        : 500;
+
+    return res.status(statusCode).json({
       error: "Failed to update request.",
       detail: error.message,
     });

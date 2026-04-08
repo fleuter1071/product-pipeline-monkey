@@ -2,6 +2,12 @@ import { createClient } from "@supabase/supabase-js";
 import { sampleRequests } from "./sampleRequests.js";
 
 const REQUESTS_TABLE = process.env.SUPABASE_REQUESTS_TABLE || "requests";
+const riceFieldRanges = {
+  reach: { min: 0, max: 5 },
+  impact: { min: 0, max: 5 },
+  confidence: { min: 0, max: 100 },
+  effort: { min: 0, max: 5 },
+};
 
 function toClientRequest(row) {
   return {
@@ -58,6 +64,26 @@ function validateCreateRequest(input) {
   return null;
 }
 
+function validateRiceFields(input) {
+  for (const [field, { min, max }] of Object.entries(riceFieldRanges)) {
+    const value = input[field];
+
+    if (value === null || value === undefined || value === "") {
+      continue;
+    }
+
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return `${field} must be a number.`;
+    }
+
+    if (value < min || value > max) {
+      return `${field} must stay between ${min} and ${max}.`;
+    }
+  }
+
+  return null;
+}
+
 function createMemoryStore() {
   const records = new Map(sampleRequests.map((request) => [request.id, request]));
 
@@ -74,6 +100,11 @@ function createMemoryStore() {
         throw new Error(validationError);
       }
 
+      const riceError = validateRiceFields(payload);
+      if (riceError) {
+        throw new Error(riceError);
+      }
+
       const id = crypto.randomUUID();
       const row = {
         id,
@@ -88,14 +119,21 @@ function createMemoryStore() {
         return null;
       }
 
+      const mergedPayload = {
+        ...toClientRequest(current),
+        ...patch,
+        createdAt: current.created_at,
+        updatedAt: new Date().toISOString().slice(0, 10),
+      };
+
+      const riceError = validateRiceFields(mergedPayload);
+      if (riceError) {
+        throw new Error(riceError);
+      }
+
       const row = {
         ...current,
-        ...toDbRequest({
-          ...toClientRequest(current),
-          ...patch,
-          createdAt: current.created_at,
-          updatedAt: new Date().toISOString().slice(0, 10),
-        }),
+        ...toDbRequest(mergedPayload),
         id,
       };
       records.set(id, row);
@@ -133,6 +171,11 @@ function createSupabaseStore() {
         throw new Error(validationError);
       }
 
+      const riceError = validateRiceFields(payload);
+      if (riceError) {
+        throw new Error(riceError);
+      }
+
       const { data, error } = await supabase
         .from(REQUESTS_TABLE)
         .insert(toDbRequest(payload))
@@ -143,9 +186,30 @@ function createSupabaseStore() {
       return toClientRequest(data);
     },
     async updateRequest(id, patch) {
+      const existing = await supabase
+        .from(REQUESTS_TABLE)
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (existing.error) throw existing.error;
+      if (!existing.data) return null;
+
+      const mergedPayload = {
+        ...toClientRequest(existing.data),
+        ...patch,
+        createdAt: existing.data.created_at,
+        updatedAt: new Date().toISOString().slice(0, 10),
+      };
+
+      const riceError = validateRiceFields(mergedPayload);
+      if (riceError) {
+        throw new Error(riceError);
+      }
+
       const { data, error } = await supabase
         .from(REQUESTS_TABLE)
-        .update(toDbRequest({ ...patch, updatedAt: new Date().toISOString().slice(0, 10) }))
+        .update(toDbRequest(mergedPayload))
         .eq("id", id)
         .select()
         .maybeSingle();

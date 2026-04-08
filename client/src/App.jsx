@@ -12,6 +12,13 @@ const roadmapDescriptions = {
   q4: "Future roadmap bets",
   backlog: "Held without commitment",
 };
+const riceFieldConfig = {
+  reach: { label: "Reach", type: "scale" },
+  impact: { label: "Impact", type: "scale" },
+  confidence: { label: "Confidence", min: 0, max: 100, step: 5 },
+  effort: { label: "Effort", type: "scale" },
+};
+const scaleOptions = [0, 1, 2, 3, 4, 5];
 
 const initialDraft = {
   title: "",
@@ -300,7 +307,18 @@ export default function App() {
     <div className="workspace-shell">
       <aside className="sidebar">
         <div>
-          <p className="eyebrow">Product planning workspace</p>
+          <div className="brand-meta">
+            <p className="eyebrow">Product planning workspace</p>
+            <div className="cat-mark" aria-hidden="true">
+              <span className="cat-ear cat-ear-left"></span>
+              <span className="cat-ear cat-ear-right"></span>
+              <span className="cat-face">
+                <span className="cat-eye"></span>
+                <span className="cat-eye"></span>
+                <span className="cat-nose"></span>
+              </span>
+            </div>
+          </div>
           <h1>Product Pipeline Monkey</h1>
           <p className="sidebar-copy">
             Move enhancement ideas from intake to scoring to roadmap decisions without losing context.
@@ -675,27 +693,49 @@ export default function App() {
                           <span className="meta-label">RICE score</span>
                           <strong>{selectedRequest.riceScore ?? "Not scored yet"}</strong>
                         </div>
+                        <div className="score-guidance">
+                          <strong>Scoring rubric</strong>
+                          <span>Use `0-5` for Reach, Impact, and Effort. Keep Confidence as a percentage from `0-100`.</span>
+                        </div>
                         <div className="score-grid">
-                          {[
-                            ["reach", "Reach"],
-                            ["impact", "Impact"],
-                            ["confidence", "Confidence"],
-                            ["effort", "Effort"],
-                          ].map(([field, label]) => (
+                          {Object.entries(riceFieldConfig).map(([field, config]) => (
                             <label className="field" key={field}>
-                              <span>{label}</span>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.1"
-                                value={selectedRequest[field] ?? ""}
-                                onChange={(event) =>
-                                  handleRequestFieldChange(
-                                    field,
-                                    event.target.value === "" ? null : Number(event.target.value),
-                                  )
-                                }
-                              />
+                              <span>
+                                {config.label}
+                                {field === "confidence" ? " (0-100)" : " (0-5)"}
+                              </span>
+                              {config.type === "scale" ? (
+                                <select
+                                  value={selectedRequest[field] ?? ""}
+                                  onChange={(event) =>
+                                    handleRequestFieldChange(
+                                      field,
+                                      event.target.value === "" ? null : Number(event.target.value),
+                                    )
+                                  }
+                                >
+                                  <option value="">Select</option>
+                                  {scaleOptions.map((option) => (
+                                    <option value={option} key={option}>
+                                      {option}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="number"
+                                  min={config.min}
+                                  max={config.max}
+                                  step={config.step}
+                                  value={selectedRequest[field] ?? ""}
+                                  onChange={(event) =>
+                                    handleRequestFieldChange(
+                                      field,
+                                      event.target.value === "" ? null : Number(event.target.value),
+                                    )
+                                  }
+                                />
+                              )}
                             </label>
                           ))}
                         </div>
