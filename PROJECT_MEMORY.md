@@ -277,3 +277,50 @@
 - Verify the production deployment behavior for the new editable request fields
 - Decide whether to extend editability to submitter priority or keep that field requester-owned
 - Continue refining PM ergonomics in the detail workspace
+
+## 2026-04-09 13:20 EDT
+
+### Feature / Work
+- Extended the PM workspace by making core request intake fields editable
+- Simplified the topbar/header treatment across Submit, Inbox, and Roadmap by removing low-value helper text
+- Shipped both changes to production after targeted QA passes
+
+### Value Provided
+- PMs can now refine request quality directly in the detail view instead of treating the original intake copy as fixed
+- The detail panel is a more complete evaluation surface because it supports request cleanup, scoring, planning, and archiving in one place
+- The app header is now quieter and less repetitive, which makes the main workspace feel more focused
+
+### Files Changed
+- `client/src/App.jsx`
+- `client/src/styles.css`
+
+### Technical Architecture / Key Decisions
+- Reused the existing client update path so title, description, and submitter name edits persist through the same API flow as scoring and placement
+- Renamed the save action from `Save score` to `Save changes` because the detail view now saves broader request updates
+- Kept the change client-side only because the backend request model already supported these fields
+- Removed low-information helper copy from the topbar rather than replacing it with new text, based on the decision that the views were self-explanatory enough without extra narration
+
+### Assumptions
+- PMs should be able to clean up request metadata as part of evaluation
+- Extra header explanation was adding more reading load than value at this stage of the product
+- Inbox and Roadmap counts remain useful enough to keep, while the submit-view helper metrics were not
+
+### Known Limitations
+- `Save changes` and `Place on roadmap` still overlap in meaning because both persist the current request state
+- Submitter priority is still not editable from the detail panel
+- The header now depends mostly on titles and metrics for orientation, so future complexity should be watched to avoid reintroducing clutter elsewhere
+
+### Key Learnings
+- If the detail panel is the primary PM workspace, it should support both evaluation and lightweight request cleanup
+- Header copy often feels useful while building, but once the workflow is clear it can become visual noise
+- Simplifying by removal is often better than replacing one explanatory sentence with another
+
+### Remaining TODOs
+- Decide whether submitter priority should become editable in the detail view
+- Consider whether the detail panel needs an unsaved-changes indicator
+- Revisit the overlap between `Save changes` and `Place on roadmap` if it starts confusing users
+
+### Next Steps
+- Confirm the latest Render deployment looks right in production
+- Keep refining PM workflow ergonomics based on real usage
+- Prioritize the next workflow improvement or data/UX refinement
