@@ -174,3 +174,106 @@
 - Verify production behavior after Render redeploy
 - Decide whether to clean or migrate any legacy rows in Supabase
 - Continue with the next product refinement or workflow feature once the new rubric is stable
+
+## 2026-04-08 20:27 EDT
+
+### Feature / Work
+- Extended the latest planning milestone by making the roadmap directly editable
+- Tightened the RICE rubric in the product experience and then improved the roadmap so PMs can reassign quarter/backlog placement without leaving the roadmap view
+- Added a subtle Monkey-inspired cat brand mark to the sidebar header and refined its placement after an initial layout issue
+
+### Value Provided
+- The roadmap now behaves like a real planning surface instead of a mostly read-only visibility board
+- PMs can reschedule work in context, which removes an unnecessary jump back to Inbox and keeps planning flow intact
+- The scoring model is now more governed and consistent, which improves trust in the RICE process
+- The app keeps a bit more product personality without compromising the visual hierarchy
+
+### Files Changed
+- `client/src/App.jsx`
+- `client/src/styles.css`
+- `server/src/index.js`
+- `server/src/requestStore.js`
+- `server/src/sampleRequests.js`
+
+### Technical Architecture / Key Decisions
+- Constrained `Reach`, `Impact`, and `Effort` to a `0-5` rubric in the client UI and validated the same ranges in the backend
+- Kept `Confidence` on its separate `0-100` percentage-style scale
+- Added a visible scoring guidance block in the score panel so the rubric is part of the workflow, not hidden knowledge
+- Refactored request updates in the client so roadmap cards can update placement inline through the existing API path
+- Chose an inline `Move to` selector on roadmap cards instead of drag-and-drop for a lighter, clearer v1 planning interaction
+- Moved the cat brand mark into the metadata row above the title after the first version disrupted the title wrapping
+
+### Assumptions
+- PMs prefer simple, governed scoring inputs over flexible free-entry values for most RICE fields
+- Roadmap placement changes are frequent enough that they should happen directly from the roadmap view
+- A compact inline selector is a better v1 control than drag-and-drop for clarity and reliability
+
+### Known Limitations
+- Existing Supabase rows with legacy `Reach` values above `5` may still need normalization to avoid validation conflicts on future edits
+- The roadmap placement save state is still a bit broader than ideal because the app uses a global `isSaving` flag
+- `Confidence` remains numeric rather than a governed option set, so the overall rubric is still partially flexible
+- The cat brand mark is intentionally subtle; if the product branding grows later, it may deserve a more formal asset
+
+### Key Learnings
+- A view that represents a planning decision should usually let the user make that decision there
+- Governing scoring inputs at the form level is better than only validating them at save time
+- Decorative brand accents should support the hierarchy and may need iteration after seeing them in the real layout
+- Inline controls can add real workflow value without clutter when they are scoped tightly and kept secondary to the main content
+
+### Remaining TODOs
+- Normalize any legacy Supabase requests that still use pre-rubric `Reach` values
+- Decide whether to tighten the `Confidence` rubric further
+- Consider whether the roadmap inline move control should get a more local loading state instead of relying on the broader save state
+- Continue refining planning ergonomics and decide the next workflow feature to prioritize
+
+### Next Steps
+- Verify the latest Render deployment behavior in production
+- Clean up or migrate any legacy Supabase rows if validation issues appear
+- Continue product refinement with the next planning, scoring, or filtering improvement
+
+## 2026-04-08 20:55 EDT
+
+### Feature / Work
+- Made the core request intake fields editable from the request detail view
+- Added editing support for request title, request description, and submitter name directly in the PM workspace
+- Updated the save action copy to better match the broader responsibility of the detail panel
+
+### Value Provided
+- PMs can now clean up and refine request quality without leaving the evaluation workflow
+- The detail panel is more complete as the main decision surface because it now supports both intake refinement and scoring/planning work
+- Reduced friction in the real product-management flow by avoiding separate edit steps for basic request metadata
+
+### Files Changed
+- `client/src/App.jsx`
+- `client/src/styles.css`
+
+### Technical Architecture / Key Decisions
+- Reused the existing client-side request update flow instead of introducing a separate edit mode or separate save endpoint
+- Kept title, description, and submitter name inside the detail panel so request refinement stays close to scoring and placement decisions
+- Renamed the button from `Save score` to `Save changes` because the save action now persists broader request edits
+- Preserved the existing backend API path, so this was a UI/workflow expansion rather than a data-model change
+
+### Assumptions
+- PMs are expected to clean up request wording and metadata as part of evaluation
+- It is acceptable for `Place on roadmap` to continue persisting the current edited request state as part of the same save path
+- Request priority remains requester-owned in this flow, so only title, description, and submitter name were added to the editable set
+
+### Known Limitations
+- `Save changes` and `Place on roadmap` still overlap a bit in meaning because both persist current request edits
+- No separate unsaved-changes indicator exists yet in the detail panel
+- Submitter priority is still not directly editable from the detail panel
+
+### Key Learnings
+- If the detail panel is the main PM workspace, it should support lightweight intake cleanup as well as scoring
+- Reusing an existing save path is often the simplest way to expand workflow capability without creating extra state complexity
+- Button labels need to evolve when the scope of an action expands, or the UI starts misleading users
+
+### Remaining TODOs
+- Decide whether submitter priority should also become editable in the detail panel
+- Consider whether the detail panel needs an explicit unsaved-changes cue
+- Revisit the split between `Save changes` and `Place on roadmap` if users find the overlap confusing
+
+### Next Steps
+- Verify the production deployment behavior for the new editable request fields
+- Decide whether to extend editability to submitter priority or keep that field requester-owned
+- Continue refining PM ergonomics in the detail workspace
