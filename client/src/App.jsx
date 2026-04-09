@@ -392,27 +392,7 @@ export default function App() {
             </h2>
           </div>
           <div className="topbar-side">
-            <div className="topbar-note">
-              {currentView === "submit"
-                ? "New requests start as submitted and unassigned so product can evaluate them later."
-                : currentView === "roadmap"
-                  ? "Use the roadmap as a visibility layer for planned work and backlog decisions."
-                  : "Review requests, score them, and place them with confidence."}
-            </div>
             <div className="topbar-metrics">
-              {currentView === "submit" ? (
-                <>
-                  <span className="mini-metric">
-                    <strong>1</strong>
-                    <span>Quick intake form</span>
-                  </span>
-                  <span className="mini-metric">
-                    <strong>PM</strong>
-                    <span>Notes supported later</span>
-                  </span>
-                </>
-              ) : null}
-
               {currentView === "inbox" ? (
                 <>
                   <span className="mini-metric">
