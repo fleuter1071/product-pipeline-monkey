@@ -369,7 +369,8 @@ textarea {
 .detail-grid,
 .score-grid,
 .roadmap-grid,
-.meta-grid {
+.meta-grid,
+.detail-edit-grid {
   display: grid;
   gap: var(--space-4);
 }
@@ -450,8 +451,13 @@ textarea {
 
 .field-row,
 .score-grid,
-.meta-grid {
+.meta-grid,
+.detail-edit-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detail-title-field {
+  grid-column: 1 / -1;
 }
 
 .filter-row {
@@ -862,7 +868,8 @@ textarea {
   .field-row,
   .filter-row,
   .score-grid,
-  .meta-grid {
+  .meta-grid,
+  .detail-edit-grid {
     grid-template-columns: 1fr;
   }
 

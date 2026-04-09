@@ -659,11 +659,29 @@ export default function App() {
                   </div>
                   <div className="detail-grid">
                     <section className="detail-section">
+                      <div className="detail-edit-grid">
+                        <label className="field detail-title-field">
+                          <span>Request title</span>
+                          <input
+                            value={selectedRequest.title}
+                            onChange={(event) => handleRequestFieldChange("title", event.target.value)}
+                            placeholder="Summarize the enhancement request"
+                          />
+                        </label>
+
+                        <label className="field">
+                          <span>Submitter name</span>
+                          <input
+                            value={selectedRequest.submitterName}
+                            onChange={(event) =>
+                              handleRequestFieldChange("submitterName", event.target.value)
+                            }
+                            placeholder="Who submitted this request?"
+                          />
+                        </label>
+                      </div>
+
                       <div className="meta-grid">
-                        <div>
-                          <span className="meta-label">Submitter</span>
-                          <strong>{selectedRequest.submitterName}</strong>
-                        </div>
                         <div>
                           <span className="meta-label">Priority</span>
                           <span className={`priority-pill ${priorityClass(selectedRequest.submitterPriority)}`}>
@@ -690,10 +708,15 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="content-block">
-                        <span className="meta-label">Description</span>
-                        <p>{selectedRequest.description}</p>
-                      </div>
+                      <label className="field">
+                        <span>Request description</span>
+                        <textarea
+                          rows="5"
+                          value={selectedRequest.description}
+                          onChange={(event) => handleRequestFieldChange("description", event.target.value)}
+                          placeholder="Capture the problem, need, and why it matters."
+                        />
+                      </label>
 
                       <label className="field">
                         <span>PM notes</span>
@@ -781,7 +804,7 @@ export default function App() {
                             onClick={handleScoreSave}
                             disabled={isSaving}
                           >
-                            Save score
+                            Save changes
                           </button>
                           <button
                             type="button"
