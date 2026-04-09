@@ -789,6 +789,30 @@ textarea {
   margin-bottom: 0.55rem;
 }
 
+.roadmap-card-controls {
+  margin-top: 0.35rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(91, 66, 48, 0.08);
+}
+
+.roadmap-move-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.roadmap-move-field span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.roadmap-move-field select {
+  padding: 0.72rem 0.85rem;
+  background: rgba(255, 255, 255, 0.88);
+}
+
 .empty-state {
   padding: 2rem;
   display: grid;

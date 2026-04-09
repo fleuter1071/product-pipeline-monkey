@@ -78,6 +78,7 @@ export default function App() {
   const [draft, setDraft] = useState(initialDraft);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [activePlacementUpdateId, setActivePlacementUpdateId] = useState(null);
   const [apiError, setApiError] = useState("");
 
   const selectedRequest =
@@ -205,18 +206,19 @@ export default function App() {
     );
   }
 
-  async function persistSelectedRequest(overrides = {}, options = {}) {
-    if (!selectedRequest) return null;
+  async function updateRequestById(id, overrides = {}, options = {}) {
+    const baseRequest = requests.find((request) => request.id === id);
+    if (!baseRequest) return null;
 
     const payload = {
-      ...selectedRequest,
+      ...baseRequest,
       ...overrides,
       updatedAt: todayStamp(),
     };
 
     try {
       setIsSaving(true);
-      const updatedItem = await updateRequest(selectedRequest.id, payload);
+      const updatedItem = await updateRequest(id, payload);
       setRequests((current) =>
         current.map((request) => (request.id === updatedItem.id ? updatedItem : request)),
       );
@@ -231,6 +233,11 @@ export default function App() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function persistSelectedRequest(overrides = {}, options = {}) {
+    if (!selectedRequest) return null;
+    return updateRequestById(selectedRequest.id, overrides, options);
   }
 
   async function handleScoreSave() {
@@ -281,6 +288,18 @@ export default function App() {
         (request) => request.id !== updatedItem.id && !request.isArchived,
       );
       setSelectedId(nextVisibleRequest?.id ?? null);
+    }
+  }
+
+  async function handleRoadmapPlacementChange(requestId, placement) {
+    try {
+      setActivePlacementUpdateId(requestId);
+      await updateRequestById(requestId, {
+        placement,
+        status: "planned",
+      });
+    } finally {
+      setActivePlacementUpdateId(null);
     }
   }
 
@@ -846,6 +865,26 @@ export default function App() {
                               {request.submitterPriority}
                             </span>
                             {request.riceScore ? <span className="score-pill">{request.riceScore}</span> : null}
+                          </div>
+                          <div className="roadmap-card-controls">
+                            <label className="roadmap-move-field" onClick={(event) => event.stopPropagation()}>
+                              <span>Move to</span>
+                              <select
+                                value={request.placement}
+                                disabled={isSaving || activePlacementUpdateId === request.id}
+                                onClick={(event) => event.stopPropagation()}
+                                onChange={(event) => {
+                                  event.stopPropagation();
+                                  handleRoadmapPlacementChange(request.id, event.target.value);
+                                }}
+                              >
+                                {roadmapColumns.map((option) => (
+                                  <option value={option} key={option}>
+                                    {formatPlacement(option)}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
                           </div>
                         </button>
                       ))
