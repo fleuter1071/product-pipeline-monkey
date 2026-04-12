@@ -379,3 +379,62 @@
 - Confirm the Render deployment looks correct in production with the new delete flow
 - Watch for any confusion between archive and delete in real usage
 - Continue refining PM workflow ergonomics, especially around destructive and maintenance actions
+
+## 2026-04-12 00:00 EDT
+
+### Feature / Work
+- Added a lightweight Delivery section to the request detail view
+- Extended the request model with execution-tracking fields
+- Refined the Delivery panel layout to use a compact summary strip, single-column primary fields, and a bottom accordion for secondary context
+- Ran QA, applied the required Supabase schema update, and pushed the feature to production
+
+### Value Provided
+- The app now supports lightweight execution tracking in the same place where PMs already score and plan work
+- PMs can capture who owns delivery, what state execution is in, what the target date is, and whether anything is blocked
+- The delivery panel adds “command center” flavor without turning the page into a crowded operations dashboard
+- The bottom accordion pattern keeps richer delivery context available without forcing it on the user by default
+
+### Files Changed
+- `client/src/App.jsx`
+- `client/src/styles.css`
+- `server/src/index.js`
+- `server/src/requestStore.js`
+- `server/src/sampleRequests.js`
+- `server/supabase-schema.sql`
+
+### Technical Architecture / Key Decisions
+- Extended the flat `requests` data model rather than introducing a separate initiative or delivery entity, keeping the change lightweight
+- Added new delivery fields end to end across client state, backend request mapping, sample fallback data, and Supabase schema
+- Kept the Delivery section as a secondary panel below scoring so the right-column hierarchy remains: planning first, execution second
+- Used progressive disclosure: summary strip first, core editable delivery fields second, and secondary context/checklist behind an accordion
+- Tightened validation lightly on the backend for `deliveryStatus` and `targetDate` so saved delivery data stays structurally coherent
+- Updated the schema file with `alter table ... add column if not exists ...` so the migration could be applied safely to the existing production table
+
+### Assumptions
+- A lightweight execution layer is more useful right now than a full initiative/workstream re-architecture
+- Delivery signals are most valuable in the detail view first; Inbox and Roadmap do not need to surface them yet
+- The new delivery fields can live on the existing request record without causing conceptual overload for the current product stage
+- It is acceptable to keep using the existing `Save changes` flow rather than introducing a separate delivery save action
+
+### Known Limitations
+- Delivery state is currently only visible in the request detail view, not summarized yet in Inbox or Roadmap
+- The new feature required a Supabase schema update; if environments drift later, delivery saves could fail until schemas are aligned
+- The panel is intentionally modest and does not yet support linked dependencies, workstreams, or automated updates
+- The accordion state is local UI state only and resets when a different request is selected
+
+### Key Learnings
+- New workflow depth is easier to absorb when added as a new visual tier rather than more fields mixed into existing panels
+- Side-panel components need side-panel layout rules; wide dashboard patterns break quickly when squeezed into a narrower column
+- A summary-first pattern is one of the best ways to add operational detail without overwhelming users
+- Database schema changes are part of feature completion whenever new persistent fields are introduced
+
+### Remaining TODOs
+- Consider surfacing a small subset of delivery signals in Inbox and/or Roadmap later, such as blocked state or owner
+- Decide whether the Delivery section needs further polish around target date formatting or blocker visibility
+- Revisit whether any delivery fields should become required later once real usage patterns are clearer
+- Continue monitoring whether the current request-based model is enough or whether a future initiative layer becomes necessary
+
+### Next Steps
+- Confirm the production Delivery section looks correct after the Render redeploy
+- Watch how often PMs actually use the expanded secondary delivery context
+- Decide whether the next delivery-oriented improvement should be better status visibility elsewhere or a modest decision/risk surfacing enhancement
