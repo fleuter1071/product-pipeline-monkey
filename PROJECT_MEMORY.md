@@ -324,3 +324,58 @@
 - Confirm the latest Render deployment looks right in production
 - Keep refining PM workflow ergonomics based on real usage
 - Prioritize the next workflow improvement or data/UX refinement
+
+## 2026-04-12 00:00 EDT
+
+### Feature / Work
+- Added permanent delete for requests from the detail panel
+- Introduced a confirmation modal before deletion
+- Shipped a small detail-panel polish by hiding the scoring-rubric copy and reducing the visible RICE score size
+- Ran a QA pass and pushed the delete milestone to production
+
+### Value Provided
+- PMs can now fully remove unwanted, duplicate, or test requests regardless of status, roadmap placement, or archive state
+- The request detail panel now supports the full maintenance workflow: edit, score, place, archive, restore, and delete
+- The destructive action is available without cluttering inbox rows or roadmap cards
+- The score panel feels more balanced visually and less dominated by the score value itself
+
+### Files Changed
+- `client/src/App.jsx`
+- `client/src/api.js`
+- `client/src/styles.css`
+- `server/src/index.js`
+- `server/src/requestStore.js`
+
+### Technical Architecture / Key Decisions
+- Added a new backend `DELETE /api/requests/:id` route and wired both the Supabase store and memory fallback store to support permanent deletion
+- Added a client-side `deleteRequest` API helper instead of overloading archive behavior, keeping archive and delete as separate lifecycle concepts
+- Surfaced `Delete request` only in the detail view and styled it as a quiet destructive action, with the real visual emphasis happening in the confirmation modal
+- Kept delete out of inbox rows and roadmap cards so the primary planning surfaces stay focused and uncluttered
+- Reused the existing request selection model after deletion by automatically moving focus to the next remaining request when available
+
+### Assumptions
+- Permanent delete is a legitimate product need for duplicates, testing artifacts, and truly unwanted requests
+- Delete should be available regardless of whether a request is active, archived, or already planned
+- A confirmation modal provides sufficient safety for an irreversible action in this v1 workflow
+- It is acceptable for post-delete selection to choose from the full request set rather than the currently filtered visible list for now
+
+### Known Limitations
+- If filters are active, the next selected request after deletion may come from the full request list rather than the currently visible filtered subset
+- The confirmation modal does not yet implement explicit keyboard escape handling or focus trapping
+- Delete is permanent; there is no undo or soft-delete recovery path once confirmed
+
+### Key Learnings
+- Destructive actions should stay contextual and low-emphasis until the exact moment of confirmation
+- Archive and delete serve different product needs: archive preserves history, while delete removes noise permanently
+- A planning app benefits from keeping maintenance actions in the detail workspace instead of spreading them across list and board views
+- Small typography adjustments in dense decision panels can noticeably improve balance without changing product behavior
+
+### Remaining TODOs
+- Consider improving post-delete selection so it respects the current filtered inbox view
+- Decide whether the confirmation modal needs stronger accessibility support such as escape-to-close and focus management
+- Evaluate whether delete should later support an undo pattern or remain permanently destructive
+
+### Next Steps
+- Confirm the Render deployment looks correct in production with the new delete flow
+- Watch for any confusion between archive and delete in real usage
+- Continue refining PM workflow ergonomics, especially around destructive and maintenance actions
