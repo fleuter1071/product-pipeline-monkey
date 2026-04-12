@@ -40,7 +40,9 @@ app.post("/api/requests", async (req, res) => {
     res.status(201).json({ item });
   } catch (error) {
     const statusCode =
-      error.message?.includes("required") || error.message?.includes("must stay between")
+      error.message?.includes("required") ||
+      error.message?.includes("must stay between") ||
+      error.message?.includes("must be a valid")
         ? 400
         : 500;
     res.status(statusCode).json({
@@ -61,7 +63,9 @@ app.patch("/api/requests/:id", async (req, res) => {
     return res.json({ item });
   } catch (error) {
     const statusCode =
-      error.message?.includes("required") || error.message?.includes("must stay between")
+      error.message?.includes("required") ||
+      error.message?.includes("must stay between") ||
+      error.message?.includes("must be a valid")
         ? 400
         : 500;
 

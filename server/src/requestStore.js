@@ -8,6 +8,30 @@ const riceFieldRanges = {
   confidence: { min: 0, max: 100 },
   effort: { min: 0, max: 5 },
 };
+const deliveryStatusOptions = [
+  "clarifying",
+  "ready",
+  "in_progress",
+  "blocked",
+  "ready_to_launch",
+  "launched",
+];
+
+function defaultDeliveryFields() {
+  return {
+    deliveryOwner: "",
+    deliveryStatus: "clarifying",
+    targetDate: "",
+    currentBlocker: "",
+    mainRisk: "",
+    openDecision: "",
+    latestUpdate: "",
+    launchQaComplete: false,
+    launchStakeholdersInformed: false,
+    launchDateConfirmed: false,
+    launchMonitoringReady: false,
+  };
+}
 
 function toClientRequest(row) {
   return {
@@ -27,11 +51,23 @@ function toClientRequest(row) {
     placement: row.placement,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deliveryOwner: row.delivery_owner || "",
+    deliveryStatus: row.delivery_status || "clarifying",
+    targetDate: row.target_date || "",
+    currentBlocker: row.current_blocker || "",
+    mainRisk: row.main_risk || "",
+    openDecision: row.open_decision || "",
+    latestUpdate: row.latest_update || "",
+    launchQaComplete: Boolean(row.launch_qa_complete),
+    launchStakeholdersInformed: Boolean(row.launch_stakeholders_informed),
+    launchDateConfirmed: Boolean(row.launch_date_confirmed),
+    launchMonitoringReady: Boolean(row.launch_monitoring_ready),
   };
 }
 
 function toDbRequest(input) {
   const now = new Date().toISOString().slice(0, 10);
+  const delivery = { ...defaultDeliveryFields(), ...input };
   return {
     title: input.title?.trim() ?? "",
     description: input.description?.trim() ?? "",
@@ -48,6 +84,17 @@ function toDbRequest(input) {
     placement: input.placement ?? "unassigned",
     created_at: input.createdAt ?? now,
     updated_at: input.updatedAt ?? now,
+    delivery_owner: delivery.deliveryOwner?.trim() ?? "",
+    delivery_status: delivery.deliveryStatus ?? "clarifying",
+    target_date: delivery.targetDate || null,
+    current_blocker: delivery.currentBlocker ?? "",
+    main_risk: delivery.mainRisk ?? "",
+    open_decision: delivery.openDecision ?? "",
+    latest_update: delivery.latestUpdate ?? "",
+    launch_qa_complete: Boolean(delivery.launchQaComplete),
+    launch_stakeholders_informed: Boolean(delivery.launchStakeholdersInformed),
+    launch_date_confirmed: Boolean(delivery.launchDateConfirmed),
+    launch_monitoring_ready: Boolean(delivery.launchMonitoringReady),
   };
 }
 
@@ -84,6 +131,26 @@ function validateRiceFields(input) {
   return null;
 }
 
+function validateDeliveryFields(input) {
+  if (
+    input.deliveryStatus !== undefined &&
+    input.deliveryStatus !== null &&
+    input.deliveryStatus !== "" &&
+    !deliveryStatusOptions.includes(input.deliveryStatus)
+  ) {
+    return "deliveryStatus must be a valid delivery state.";
+  }
+
+  if (input.targetDate) {
+    const targetDate = new Date(input.targetDate);
+    if (Number.isNaN(targetDate.getTime())) {
+      return "targetDate must be a valid date.";
+    }
+  }
+
+  return null;
+}
+
 function createMemoryStore() {
   const records = new Map(sampleRequests.map((request) => [request.id, request]));
 
@@ -103,6 +170,11 @@ function createMemoryStore() {
       const riceError = validateRiceFields(payload);
       if (riceError) {
         throw new Error(riceError);
+      }
+
+      const deliveryError = validateDeliveryFields(payload);
+      if (deliveryError) {
+        throw new Error(deliveryError);
       }
 
       const id = crypto.randomUUID();
@@ -129,6 +201,11 @@ function createMemoryStore() {
       const riceError = validateRiceFields(mergedPayload);
       if (riceError) {
         throw new Error(riceError);
+      }
+
+      const deliveryError = validateDeliveryFields(mergedPayload);
+      if (deliveryError) {
+        throw new Error(deliveryError);
       }
 
       const row = {
@@ -185,6 +262,11 @@ function createSupabaseStore() {
         throw new Error(riceError);
       }
 
+      const deliveryError = validateDeliveryFields(payload);
+      if (deliveryError) {
+        throw new Error(deliveryError);
+      }
+
       const { data, error } = await supabase
         .from(REQUESTS_TABLE)
         .insert(toDbRequest(payload))
@@ -214,6 +296,11 @@ function createSupabaseStore() {
       const riceError = validateRiceFields(mergedPayload);
       if (riceError) {
         throw new Error(riceError);
+      }
+
+      const deliveryError = validateDeliveryFields(mergedPayload);
+      if (deliveryError) {
+        throw new Error(deliveryError);
       }
 
       const { data, error } = await supabase

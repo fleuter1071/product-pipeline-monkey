@@ -18,6 +18,20 @@ const riceFieldConfig = {
   confidence: { label: "Confidence", min: 0, max: 100, step: 5 },
   effort: { label: "Effort", type: "scale" },
 };
+const deliveryStatusOptions = [
+  "clarifying",
+  "ready",
+  "in_progress",
+  "blocked",
+  "ready_to_launch",
+  "launched",
+];
+const deliveryChecklistFields = [
+  { field: "launchQaComplete", label: "QA complete" },
+  { field: "launchStakeholdersInformed", label: "Stakeholders informed" },
+  { field: "launchDateConfirmed", label: "Release date confirmed" },
+  { field: "launchMonitoringReady", label: "Monitoring ready" },
+];
 const scaleOptions = [0, 1, 2, 3, 4, 5];
 
 const initialDraft = {
@@ -65,6 +79,13 @@ function priorityClass(priority) {
   return priority.toLowerCase().replace(/\s+/g, "-");
 }
 
+function formatDeliveryStatus(status) {
+  return status
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default function App() {
   const [currentView, setCurrentView] = useState("inbox");
   const [requests, setRequests] = useState([]);
@@ -81,6 +102,7 @@ export default function App() {
   const [activePlacementUpdateId, setActivePlacementUpdateId] = useState(null);
   const [apiError, setApiError] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeliveryExpanded, setIsDeliveryExpanded] = useState(false);
 
   const selectedRequest =
     requests.find((request) => request.id === selectedId) ?? requests[0] ?? null;
@@ -125,6 +147,10 @@ export default function App() {
       setSelectedId(requests[0].id);
     }
   }, [requests, selectedId]);
+
+  useEffect(() => {
+    setIsDeliveryExpanded(false);
+  }, [selectedId]);
 
   const filteredRequests = useMemo(
     () =>
@@ -742,10 +768,6 @@ export default function App() {
                           <span className="meta-label">RICE score</span>
                           <strong>{selectedRequest.riceScore ?? "Not scored yet"}</strong>
                         </div>
-                        <div className="score-guidance">
-                          <strong>Scoring rubric</strong>
-                          <span>Use `0-5` for Reach, Impact, and Effort. Keep Confidence as a percentage from `0-100`.</span>
-                        </div>
                         <div className="score-grid">
                           {Object.entries(riceFieldConfig).map(([field, config]) => (
                             <label className="field" key={field}>
@@ -813,11 +835,11 @@ export default function App() {
                           >
                             Save changes
                           </button>
-                            <button
-                              type="button"
-                              className="secondary-button subtle-button"
-                              onClick={handleArchiveToggle}
-                              disabled={isSaving}
+                          <button
+                            type="button"
+                            className="secondary-button subtle-button"
+                            onClick={handleArchiveToggle}
+                            disabled={isSaving}
                           >
                             {selectedRequest.isArchived ? "Restore request" : "Archive request"}
                           </button>
@@ -826,22 +848,153 @@ export default function App() {
                             className="primary-button"
                             onClick={handlePlacementPlace}
                             disabled={!canPlaceSelectedRequest || isSaving}
-                            >
-                              Place on roadmap
-                            </button>
-                          </div>
-                          <div className="destructive-action-row">
-                            <button
-                              type="button"
-                              className="danger-button"
-                              onClick={() => setIsDeleteDialogOpen(true)}
-                              disabled={isSaving}
-                            >
-                              Delete request
-                            </button>
+                          >
+                            Place on roadmap
+                          </button>
+                        </div>
+                        <div className="destructive-action-row">
+                          <button
+                            type="button"
+                            className="danger-button"
+                            onClick={() => setIsDeleteDialogOpen(true)}
+                            disabled={isSaving}
+                          >
+                            Delete request
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="delivery-shell">
+                        <div className="delivery-header">
+                          <div>
+                            <span className="meta-label">Delivery</span>
+                            <strong>Execution snapshot</strong>
                           </div>
                         </div>
-                      </section>
+
+                        <div className="delivery-summary">
+                          <div className="delivery-summary-card">
+                            <span className="meta-label">Status</span>
+                            <strong>{formatDeliveryStatus(selectedRequest.deliveryStatus)}</strong>
+                          </div>
+                          <div className="delivery-summary-card">
+                            <span className="meta-label">Owner</span>
+                            <strong>{selectedRequest.deliveryOwner || "Unassigned"}</strong>
+                          </div>
+                          <div className="delivery-summary-card">
+                            <span className="meta-label">Target</span>
+                            <strong>
+                              {selectedRequest.targetDate ? formatDate(selectedRequest.targetDate) : "No target"}
+                            </strong>
+                          </div>
+                          <div className="delivery-summary-card">
+                            <span className="meta-label">Blocker</span>
+                            <strong>{selectedRequest.currentBlocker?.trim() ? "Active" : "None"}</strong>
+                          </div>
+                        </div>
+
+                        <div className="delivery-grid">
+                          <label className="field">
+                            <span>Execution status</span>
+                            <select
+                              value={selectedRequest.deliveryStatus}
+                              onChange={(event) => handleRequestFieldChange("deliveryStatus", event.target.value)}
+                            >
+                              {deliveryStatusOptions.map((option) => (
+                                <option value={option} key={option}>
+                                  {formatDeliveryStatus(option)}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="field">
+                            <span>Owner</span>
+                            <input
+                              value={selectedRequest.deliveryOwner}
+                              onChange={(event) => handleRequestFieldChange("deliveryOwner", event.target.value)}
+                              placeholder="Who owns delivery?"
+                            />
+                          </label>
+                          <label className="field">
+                            <span>Target date</span>
+                            <input
+                              type="date"
+                              value={selectedRequest.targetDate || ""}
+                              onChange={(event) => handleRequestFieldChange("targetDate", event.target.value)}
+                            />
+                          </label>
+                          <label className="field">
+                            <span>Current blocker</span>
+                            <input
+                              value={selectedRequest.currentBlocker}
+                              onChange={(event) => handleRequestFieldChange("currentBlocker", event.target.value)}
+                              placeholder="What is this waiting on?"
+                            />
+                          </label>
+                        </div>
+
+                        {isDeliveryExpanded ? (
+                          <div className="delivery-secondary">
+                            <label className="field">
+                              <span>Main risk</span>
+                              <textarea
+                                rows="3"
+                                value={selectedRequest.mainRisk}
+                                onChange={(event) => handleRequestFieldChange("mainRisk", event.target.value)}
+                                placeholder="What could delay or damage delivery?"
+                              />
+                            </label>
+                            <label className="field">
+                              <span>Open decision</span>
+                              <textarea
+                                rows="3"
+                                value={selectedRequest.openDecision}
+                                onChange={(event) => handleRequestFieldChange("openDecision", event.target.value)}
+                                placeholder="What decision still needs to be made?"
+                              />
+                            </label>
+                            <label className="field">
+                              <span>Latest update</span>
+                              <textarea
+                                rows="3"
+                                value={selectedRequest.latestUpdate}
+                                onChange={(event) => handleRequestFieldChange("latestUpdate", event.target.value)}
+                                placeholder="What changed most recently?"
+                              />
+                            </label>
+                            <div className="delivery-checklist">
+                              <span className="meta-label">Launch readiness</span>
+                              <div className="delivery-checklist-grid">
+                                {deliveryChecklistFields.map((item) => (
+                                  <label className="delivery-checklist-item" key={item.field}>
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedRequest[item.field]}
+                                      onChange={(event) =>
+                                        handleRequestFieldChange(item.field, event.target.checked)
+                                      }
+                                    />
+                                    <span>{item.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          className="delivery-toggle"
+                          onClick={() => setIsDeliveryExpanded((current) => !current)}
+                          aria-expanded={isDeliveryExpanded}
+                        >
+                          <span>{isDeliveryExpanded ? "Hide details" : "See more details"}</span>
+                          <span className={`delivery-toggle-caret${isDeliveryExpanded ? " is-open" : ""}`}>
+                            ▾
+                          </span>
+                        </button>
+                      </div>
+                    </section>
                     </div>
                   </>
               ) : (
