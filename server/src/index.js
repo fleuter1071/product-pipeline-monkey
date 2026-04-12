@@ -72,6 +72,23 @@ app.patch("/api/requests/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/requests/:id", async (req, res) => {
+  try {
+    const removed = await requestStore.deleteRequest(req.params.id);
+
+    if (!removed) {
+      return res.status(404).json({ error: "Request not found." });
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(500).json({
+      error: "Failed to delete request.",
+      detail: error.message,
+    });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Product Pipeline Monkey server listening on port ${port}`);
 });

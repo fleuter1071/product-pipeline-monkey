@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { createRequest, fetchRequests, updateRequest } from "./api";
+import { createRequest, deleteRequest, fetchRequests, updateRequest } from "./api";
 
 const submitterPriorityOptions = ["Very High", "High", "Medium", "Low"];
 const statusOptions = ["submitted", "scored", "planned"];
@@ -80,6 +80,7 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [activePlacementUpdateId, setActivePlacementUpdateId] = useState(null);
   const [apiError, setApiError] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const selectedRequest =
     requests.find((request) => request.id === selectedId) ?? requests[0] ?? null;
@@ -238,6 +239,32 @@ export default function App() {
   async function persistSelectedRequest(overrides = {}, options = {}) {
     if (!selectedRequest) return null;
     return updateRequestById(selectedRequest.id, overrides, options);
+  }
+
+  async function handleDeleteRequest() {
+    if (!selectedRequest) return;
+
+    const deletedId = selectedRequest.id;
+
+    try {
+      setIsSaving(true);
+      await deleteRequest(deletedId);
+
+      let nextSelectedId = null;
+      setRequests((current) => {
+        const remaining = current.filter((request) => request.id !== deletedId);
+        nextSelectedId = remaining[0]?.id ?? null;
+        return remaining;
+      });
+      setSelectedId((current) => (current === deletedId ? nextSelectedId : current));
+      setApiError("");
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      setApiError(error.message);
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleScoreSave() {
@@ -786,11 +813,11 @@ export default function App() {
                           >
                             Save changes
                           </button>
-                          <button
-                            type="button"
-                            className="secondary-button subtle-button"
-                            onClick={handleArchiveToggle}
-                            disabled={isSaving}
+                            <button
+                              type="button"
+                              className="secondary-button subtle-button"
+                              onClick={handleArchiveToggle}
+                              disabled={isSaving}
                           >
                             {selectedRequest.isArchived ? "Restore request" : "Archive request"}
                           </button>
@@ -799,14 +826,24 @@ export default function App() {
                             className="primary-button"
                             onClick={handlePlacementPlace}
                             disabled={!canPlaceSelectedRequest || isSaving}
-                          >
-                            Place on roadmap
-                          </button>
+                            >
+                              Place on roadmap
+                            </button>
+                          </div>
+                          <div className="destructive-action-row">
+                            <button
+                              type="button"
+                              className="danger-button"
+                              onClick={() => setIsDeleteDialogOpen(true)}
+                              disabled={isSaving}
+                            >
+                              Delete request
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </section>
-                  </div>
-                </>
+                      </section>
+                    </div>
+                  </>
               ) : (
                 <div className="empty-state">
                   <h3>No requests yet</h3>
@@ -905,7 +942,43 @@ export default function App() {
             </div>
           </section>
         ) : null}
-      </main>
-    </div>
-  );
-}
+        </main>
+
+        {isDeleteDialogOpen && selectedRequest ? (
+          <div className="modal-overlay" role="presentation" onClick={() => setIsDeleteDialogOpen(false)}>
+            <div
+              className="confirm-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-request-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p className="panel-label">Delete request</p>
+              <h3 id="delete-request-title">Delete this request?</h3>
+              <p className="modal-copy">
+                This will permanently remove it from the inbox, roadmap, and history.
+              </p>
+              <div className="form-actions modal-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={handleDeleteRequest}
+                  disabled={isSaving}
+                >
+                  Delete request
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }

@@ -38,3 +38,9 @@ export async function updateRequest(id, payload) {
   });
   return data.item;
 }
+
+export async function deleteRequest(id) {
+  await requestJson(`/api/requests/${id}`, {
+    method: "DELETE",
+  });
+}

@@ -139,6 +139,15 @@ function createMemoryStore() {
       records.set(id, row);
       return toClientRequest(row);
     },
+    async deleteRequest(id) {
+      const current = records.get(id);
+      if (!current) {
+        return false;
+      }
+
+      records.delete(id);
+      return true;
+    },
   };
 }
 
@@ -217,6 +226,17 @@ function createSupabaseStore() {
       if (error) throw error;
       if (!data) return null;
       return toClientRequest(data);
+    },
+    async deleteRequest(id) {
+      const { data, error } = await supabase
+        .from(REQUESTS_TABLE)
+        .delete()
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
+
+      if (error) throw error;
+      return Boolean(data?.id);
     },
   };
 }
