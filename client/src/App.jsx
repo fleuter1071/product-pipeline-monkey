@@ -406,7 +406,9 @@ export default function App() {
                 key={item.id}
                 className={`nav-item${isActive ? " is-active" : ""}`}
                 onClick={() => setCurrentView(item.id)}
+                aria-current={isActive ? "page" : undefined}
               >
+                {isActive ? <span className="nav-active-marker">Current section</span> : null}
                 <span className="nav-title">{item.label}</span>
                 <span className="nav-description">{item.description}</span>
               </button>
@@ -571,8 +573,8 @@ export default function App() {
           <section className="inbox-layout">
             <article className="list-panel">
               <div className="panel-header">
-                <p className="panel-label">Request queue</p>
-                <h3>Scan incoming work and pick the next request to evaluate</h3>
+                <p className="panel-label">1. Choose from queue</p>
+                <h3>Choose a request</h3>
               </div>
               <div className="filter-row">
                 <label className="filter-field">
@@ -650,10 +652,14 @@ export default function App() {
                       key={request.id}
                       className={`request-row${isSelected ? " is-selected" : ""}`}
                       onClick={() => handleSelectRequest(request.id)}
+                      aria-current={isSelected ? "true" : undefined}
                     >
                       <div className="row-heading">
                         <strong>{request.title}</strong>
-                        {request.riceScore ? <span className="score-pill">{request.riceScore}</span> : null}
+                        <span className="row-heading-meta">
+                          {isSelected ? <span className="selected-pill">Selected</span> : null}
+                          {request.riceScore ? <span className="score-pill">{request.riceScore}</span> : null}
+                        </span>
                       </div>
                       <p className="request-snippet">{request.description}</p>
                       <div className="row-meta">
@@ -683,7 +689,7 @@ export default function App() {
               {selectedRequest ? (
                 <>
                   <div className="panel-header">
-                    <p className="panel-label">Request detail</p>
+                    <p className="panel-label">2. Selected request</p>
                     <h3>{selectedRequest.title}</h3>
                     <div className="detail-subhead">
                       <span>Submitted {formatDate(selectedRequest.createdAt)}</span>
