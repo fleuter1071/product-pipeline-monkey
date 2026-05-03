@@ -76,6 +76,18 @@ textarea {
   resize: vertical;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .workspace-shell {
   width: min(1440px, calc(100% - 2rem));
   margin: 0 auto;
@@ -649,6 +661,7 @@ textarea {
 .roadmap-card {
   position: relative;
   width: 100%;
+  min-width: 0;
   padding: 1rem 1rem 0.95rem;
   border-radius: var(--radius-md);
   border: 1px solid rgba(91, 66, 48, 0.09);
@@ -945,10 +958,29 @@ textarea {
 }
 
 .roadmap-column {
+  position: relative;
   display: grid;
   gap: var(--space-4);
+  min-width: 0;
   min-height: 420px;
   align-content: start;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.roadmap-column.is-drop-ready {
+  border-color: rgba(93, 52, 32, 0.24);
+}
+
+.roadmap-column.is-drop-active {
+  border-color: rgba(93, 52, 32, 0.56);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 0 0 2px rgba(93, 52, 32, 0.12);
+  transform: translateY(-1px);
 }
 
 .roadmap-column-q1 {
@@ -1016,6 +1048,14 @@ textarea {
   gap: 0.35rem;
   color: var(--muted);
   font-size: 0.88rem;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.roadmap-column.is-drop-active .roadmap-empty {
+  border-color: rgba(93, 52, 32, 0.36);
+  background: rgba(250, 231, 213, 0.5);
 }
 
 .roadmap-empty strong {
@@ -1027,15 +1067,93 @@ textarea {
   margin-bottom: 0.55rem;
 }
 
-.roadmap-card-controls {
-  margin-top: 0.35rem;
-  padding-top: 0.7rem;
-  border-top: 1px solid rgba(91, 66, 48, 0.08);
+.roadmap-card {
+  cursor: grab;
+}
+
+.roadmap-card-main {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.roadmap-card:active {
+  cursor: grabbing;
+}
+
+.roadmap-card-main:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(159, 97, 54, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.roadmap-card.is-dragging {
+  opacity: 0.56;
+  transform: rotate(-1deg) scale(0.99);
+  box-shadow: var(--shadow-sm);
+}
+
+.roadmap-card.is-saving {
+  cursor: progress;
+}
+
+.roadmap-card-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  margin-bottom: 0.55rem;
+}
+
+.roadmap-card-header strong,
+.roadmap-snippet {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.roadmap-grip {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1.4rem;
+  margin-top: 0.1rem;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  background-image: radial-gradient(circle, rgba(93, 52, 32, 0.42) 1.5px, transparent 1.8px);
+  background-size: 6px 6px;
+  background-position: center;
+  transition: opacity 160ms ease;
+}
+
+.roadmap-card:hover .roadmap-grip,
+.roadmap-card:focus-within .roadmap-grip,
+.roadmap-card.is-dragging .roadmap-grip {
+  opacity: 1;
+}
+
+.roadmap-card-actions {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.roadmap-card:hover .roadmap-card-actions,
+.roadmap-card:focus-within .roadmap-card-actions {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .roadmap-move-field {
-  display: grid;
-  gap: 0.35rem;
+  display: block;
 }
 
 .roadmap-move-field span {
@@ -1047,8 +1165,13 @@ textarea {
 }
 
 .roadmap-move-field select {
-  padding: 0.72rem 0.85rem;
+  width: auto;
+  min-width: 7.2rem;
+  padding: 0.52rem 0.7rem;
   background: rgba(255, 255, 255, 0.88);
+  border-radius: var(--pill);
+  font-size: 0.82rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .empty-state {
@@ -1157,6 +1280,19 @@ textarea {
 
   .roadmap-grid {
     grid-template-columns: 1fr;
+  }
+
+  .roadmap-card-actions {
+    position: static;
+    margin-top: 0.65rem;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .roadmap-move-field select {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    box-shadow: none;
   }
 
   .delivery-summary {
