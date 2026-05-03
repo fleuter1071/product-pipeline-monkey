@@ -438,3 +438,61 @@
 - Confirm the production Delivery section looks correct after the Render redeploy
 - Watch how often PMs actually use the expanded secondary delivery context
 - Decide whether the next delivery-oriented improvement should be better status visibility elsewhere or a modest decision/risk surfacing enhancement
+
+## 2026-05-03 00:00 EDT
+
+### Feature / Work
+- Improved Inbox orientation and selected-state clarity
+- Added Roadmap drag-and-drop so requests can move directly between Q1, Q2, Q3, Q4, and Backlog
+- Removed the always-visible Roadmap `Move to` dropdown from each card body and replaced it with a compact fallback move control
+- Fixed long Roadmap card title/description overflow so cards stay inside their columns
+- Ran QA, built the client, and pushed the Roadmap milestone to GitHub `main`
+
+### Value Provided
+- The Inbox now makes the relationship clearer between the selected request in the queue and the detail panel on the right
+- The Roadmap now behaves more like a real planning board instead of a read-only board with form controls inside every card
+- PMs can reschedule work spatially by dragging cards across planning horizons
+- Roadmap cards are more compact and easier to scan because the visible dropdown no longer consumes vertical space
+- Long titles and descriptions are contained inside their cards, preventing cross-column visual overlap
+
+### Files Changed
+- `client/src/App.jsx`
+- `client/src/styles.css`
+
+### Technical Architecture / Key Decisions
+- Kept the change frontend-only and reused the existing request update path
+- Used the existing `placement` field for Roadmap movement instead of adding a new data model
+- Added local drag state in `App.jsx` with `draggedRequestId` and `activeDropColumn`
+- Added native browser drag-and-drop handlers for Roadmap cards and columns
+- Kept a compact fallback move select for keyboard/mobile/non-drag usage
+- Separated the Roadmap card's open-detail action from the fallback move select so the card remains keyboard-friendly
+- Added CSS containment rules such as `min-width: 0`, `overflow-wrap: anywhere`, and `word-break: break-word` to prevent long text overflow in narrow columns
+
+### Assumptions
+- Desktop users will prefer dragging cards between quarters/backlog for planning work
+- Mobile and keyboard users still need a fallback move control because drag-and-drop alone is not enough
+- The existing backend update behavior is sufficient for persisting Roadmap placement changes
+- Render production deploys from GitHub `main` when auto-deploy is enabled
+
+### Known Limitations
+- Native drag-and-drop behavior can vary slightly across browsers and devices
+- The fallback move select is intentionally subtle on desktop and may need further polish if users do not discover it
+- There is no automated browser drag-and-drop test coverage yet
+- Roadmap card movement still depends on the existing global `isSaving` state rather than a fully local per-card save state
+
+### Key Learnings
+- Planning surfaces should let users make planning changes directly where they see the plan
+- Always-visible per-card controls can make a board feel crowded and form-like; progressive disclosure keeps scan speed higher
+- Narrow grid cards need explicit text containment rules so long product titles do not bleed into adjacent columns
+- When adding drag-and-drop, keeping a fallback control protects accessibility and mobile usability
+
+### Remaining TODOs
+- Manually verify production after Render finishes deploying from commit `bcd1b9d`
+- Consider adding a clearer drag affordance or onboarding hint if users do not discover drag-and-drop naturally
+- Consider a more local saving indicator for individual Roadmap card moves
+- Consider automated interaction coverage for Roadmap movement later
+
+### Next Steps
+- Confirm the production Roadmap page shows compact cards, clean wrapping, and drag/drop movement
+- Test moving a card between Q4 and Backlog in production and refresh to confirm persistence
+- Continue refining Roadmap card density and delivery/status signals once real planning usage is observed

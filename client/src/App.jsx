@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRequest, deleteRequest, fetchRequests, updateRequest } from "./api";
 
 const submitterPriorityOptions = ["Very High", "High", "Medium", "Low"];
@@ -105,6 +105,7 @@ export default function App() {
   const [isDeliveryExpanded, setIsDeliveryExpanded] = useState(false);
   const [draggedRequestId, setDraggedRequestId] = useState(null);
   const [activeDropColumn, setActiveDropColumn] = useState(null);
+  const didDragRoadmapRef = useRef(false);
 
   const selectedRequest =
     requests.find((request) => request.id === selectedId) ?? requests[0] ?? null;
@@ -347,18 +348,38 @@ export default function App() {
   }
 
   async function handleRoadmapPlacementChange(requestId, placement) {
+    const previousRequest = requests.find((request) => request.id === requestId);
+    if (!previousRequest || previousRequest.placement === placement) return;
+
     try {
       setActivePlacementUpdateId(requestId);
+      setRequests((current) =>
+        current.map((request) =>
+          request.id === requestId
+            ? {
+                ...request,
+                placement,
+                status: "planned",
+                updatedAt: todayStamp(),
+              }
+            : request,
+        ),
+      );
       await updateRequestById(requestId, {
         placement,
         status: "planned",
       });
+    } catch (error) {
+      setRequests((current) =>
+        current.map((request) => (request.id === requestId ? previousRequest : request)),
+      );
     } finally {
       setActivePlacementUpdateId(null);
     }
   }
 
   function handleRoadmapDragStart(event, requestId) {
+    didDragRoadmapRef.current = true;
     setDraggedRequestId(requestId);
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", requestId);
@@ -389,16 +410,25 @@ export default function App() {
       return;
     }
 
-    try {
-      await handleRoadmapPlacementChange(requestId, column);
-    } finally {
-      setDraggedRequestId(null);
-    }
+    setDraggedRequestId(null);
+    await handleRoadmapPlacementChange(requestId, column);
   }
 
   function handleRoadmapDragEnd() {
     setDraggedRequestId(null);
     setActiveDropColumn(null);
+    window.setTimeout(() => {
+      didDragRoadmapRef.current = false;
+    }, 0);
+  }
+
+  function handleRoadmapCardOpen(requestId) {
+    if (didDragRoadmapRef.current) {
+      didDragRoadmapRef.current = false;
+      return;
+    }
+
+    handleSelectRequest(requestId);
   }
 
   const submittedCount = requests.filter(
@@ -424,19 +454,10 @@ export default function App() {
     <div className="workspace-shell">
       <aside className="sidebar">
         <div>
-          <div className="brand-meta">
-            <p className="eyebrow">Product planning workspace</p>
-            <div className="cat-mark" aria-hidden="true">
-              <span className="cat-ear cat-ear-left"></span>
-              <span className="cat-ear cat-ear-right"></span>
-              <span className="cat-face">
-                <span className="cat-eye"></span>
-                <span className="cat-eye"></span>
-                <span className="cat-nose"></span>
-              </span>
-            </div>
-          </div>
-          <h1>Product Pipeline Monkey</h1>
+          <h1 className="sidebar-title">
+            <span>Product</span>
+            <span>Workspace</span>
+          </h1>
           <p className="sidebar-copy">
             Move enhancement ideas from intake to scoring to roadmap decisions without losing context.
           </p>
@@ -763,15 +784,25 @@ export default function App() {
                             placeholder="Who submitted this request?"
                           />
                         </label>
+
+                        <label className="field">
+                          <span>Priority</span>
+                          <select
+                            value={selectedRequest.submitterPriority}
+                            onChange={(event) =>
+                              handleRequestFieldChange("submitterPriority", event.target.value)
+                            }
+                          >
+                            {submitterPriorityOptions.map((option) => (
+                              <option value={option} key={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                       </div>
 
                       <div className="meta-grid">
-                        <div>
-                          <span className="meta-label">Priority</span>
-                          <span className={`priority-pill ${priorityClass(selectedRequest.submitterPriority)}`}>
-                            {selectedRequest.submitterPriority}
-                          </span>
-                        </div>
                         <div>
                           <span className="meta-label">Status</span>
                           <span className="status-pill">{formatStatus(selectedRequest.status)}</span>
@@ -1103,59 +1134,69 @@ export default function App() {
                   </header>
                   <div className="roadmap-cards">
                     {roadmapItems[column].length ? (
-                      roadmapItems[column].map((request) => (
-                        <article
-                          draggable={!isSaving}
-                          className={`roadmap-card${
-                            draggedRequestId === request.id ? " is-dragging" : ""
-                          }${activePlacementUpdateId === request.id ? " is-saving" : ""}`}
-                          key={request.id}
-                          onDragStart={(event) => handleRoadmapDragStart(event, request.id)}
-                          onDragEnd={handleRoadmapDragEnd}
-                        >
-                          <button
-                            type="button"
-                            className="roadmap-card-main"
-                            onClick={() => handleSelectRequest(request.id)}
+                      <>
+                        {roadmapItems[column].map((request) => (
+                          <article
+                            draggable={!isSaving}
+                            className={`roadmap-card${
+                              draggedRequestId === request.id ? " is-dragging" : ""
+                            }${activePlacementUpdateId === request.id ? " is-saving" : ""}`}
+                            key={request.id}
+                            onDragStart={(event) => handleRoadmapDragStart(event, request.id)}
+                            onDragEnd={handleRoadmapDragEnd}
                           >
-                            <div className="roadmap-card-header">
-                              <strong>{request.title}</strong>
-                              <span className="roadmap-grip" aria-hidden="true"></span>
+                            <button
+                              type="button"
+                              className="roadmap-card-main"
+                              onClick={() => handleRoadmapCardOpen(request.id)}
+                            >
+                              <div className="roadmap-card-header">
+                                <strong>{request.title}</strong>
+                                <span className="roadmap-grip" aria-hidden="true"></span>
+                              </div>
+                              <p className="request-snippet roadmap-snippet">{request.description}</p>
+                              <div className="row-meta">
+                                <span className={`priority-pill ${priorityClass(request.submitterPriority)}`}>
+                                  {request.submitterPriority}
+                                </span>
+                                {request.riceScore ? <span className="score-pill">{request.riceScore}</span> : null}
+                                {activePlacementUpdateId === request.id ? (
+                                  <span className="status-pill status-pill-saving">Moving...</span>
+                                ) : null}
+                              </div>
+                            </button>
+                            <div
+                              className="roadmap-card-actions"
+                              onClick={(event) => event.stopPropagation()}
+                              onKeyDown={(event) => event.stopPropagation()}
+                            >
+                              <label className="roadmap-move-field">
+                                <span className="sr-only">Move request</span>
+                                <select
+                                  aria-label={`Move ${request.title}`}
+                                  value={request.placement}
+                                  disabled={isSaving || activePlacementUpdateId === request.id}
+                                  onChange={(event) => {
+                                    event.stopPropagation();
+                                    handleRoadmapPlacementChange(request.id, event.target.value);
+                                  }}
+                                >
+                                  {roadmapColumns.map((option) => (
+                                    <option value={option} key={option}>
+                                      {formatPlacement(option)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
                             </div>
-                            <p className="request-snippet roadmap-snippet">{request.description}</p>
-                            <div className="row-meta">
-                              <span className={`priority-pill ${priorityClass(request.submitterPriority)}`}>
-                                {request.submitterPriority}
-                              </span>
-                              {request.riceScore ? <span className="score-pill">{request.riceScore}</span> : null}
-                            </div>
-                          </button>
-                          <div
-                            className="roadmap-card-actions"
-                            onClick={(event) => event.stopPropagation()}
-                            onKeyDown={(event) => event.stopPropagation()}
-                          >
-                            <label className="roadmap-move-field">
-                              <span className="sr-only">Move request</span>
-                              <select
-                                aria-label={`Move ${request.title}`}
-                                value={request.placement}
-                                disabled={isSaving || activePlacementUpdateId === request.id}
-                                onChange={(event) => {
-                                  event.stopPropagation();
-                                  handleRoadmapPlacementChange(request.id, event.target.value);
-                                }}
-                              >
-                                {roadmapColumns.map((option) => (
-                                  <option value={option} key={option}>
-                                    {formatPlacement(option)}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
+                          </article>
+                        ))}
+                        {draggedRequestId && activeDropColumn === column ? (
+                          <div className="roadmap-drop-placeholder" aria-hidden="true">
+                            Drop to move into {formatPlacement(column)}
                           </div>
-                        </article>
-                      ))
+                        ) : null}
+                      </>
                     ) : (
                       <div className="roadmap-empty">
                         <strong>{draggedRequestId ? "Drop request here" : "Nothing here yet"}</strong>
