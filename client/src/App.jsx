@@ -1096,9 +1096,6 @@ export default function App() {
                 <p className="panel-label">Roadmap view</p>
                 <h3>See what is committed now and what stays in backlog</h3>
               </div>
-              <p>
-                In v1, planning happens from the request detail view. This board is for visibility and quick review.
-              </p>
             </article>
             <div className="roadmap-summary">
               <span className="roadmap-summary-pill">
